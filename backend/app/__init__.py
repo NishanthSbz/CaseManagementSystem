@@ -2,8 +2,8 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
-from flask_cors import CORS
 from app.config import Config
+from app.cors_config import configure_cors
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -13,10 +13,12 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
+    # Configure CORS before initializing other extensions
+    configure_cors(app)
+    
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
-    CORS(app)
     
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):

@@ -1,10 +1,21 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required
 from app.auth import auth_required, register_user, login_user, refresh_token, logout_user, get_current_user
 from app.services.simplified_case_service import SimplifiedCaseService
 from app.authorization import require_case_access, get_accessible_cases_query, authorize_case_access
 
 api = Blueprint('api', __name__)
+
+@api.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', request.headers.get('Origin', '*'))
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, Access-Control-Allow-Credentials')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, HEAD, POST, OPTIONS, PUT, PATCH, DELETE')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Max-Age', '600')
+        return response
 
 @api.errorhandler(404)
 def not_found(error):
@@ -13,6 +24,13 @@ def not_found(error):
 @api.errorhandler(500)
 def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
+
+@api.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'message': 'Case Management API is running'
+    }), 200
 
 @api.route('/auth/register', methods=['POST'])
 def register():
@@ -129,13 +147,6 @@ def get_users(current_user):
     return jsonify({
         'users': [{'id': user.id, 'username': user.username, 'email': user.email} 
                  for user in users]
-    }), 200
-
-@api.route('/health', methods=['GET'])
-def health_check():
-    return jsonify({
-        'status': 'healthy',
-        'message': 'Case Management API is running'
     }), 200
 
 @api.route('/test-auth', methods=['GET'])
