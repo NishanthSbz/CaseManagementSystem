@@ -407,7 +407,7 @@ VITE_API_URL=http://localhost:5000/api
 - [File Structure Documentation](docs/FileStructure_Documentation.md)
 
 ### Step 5: Access the Application
-- Frontend: http://localhost:3000
+- Frontend: http://localhost:5173
 - Backend API: http://localhost:5000
 - API Documentation: http://localhost:5000/api/docs
 
