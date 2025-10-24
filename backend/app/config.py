@@ -8,7 +8,7 @@ class Config:
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'mysql+pymysql://root:Joedaniel%40%402006@localhost:3306/case_management'
+        'mysql+pymysql://root:{Your Sql password}@localhost:3306/case_management'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     CASES_PER_PAGE = 10
