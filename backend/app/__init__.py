@@ -10,17 +10,14 @@ migrate = Migrate()
 jwt = JWTManager()
 
 def create_app(config_class=Config):
-    """Application factory pattern for Flask app creation"""
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
     CORS(app)
     
-    # JWT error handlers
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
         print("JWT token expired")
@@ -36,7 +33,6 @@ def create_app(config_class=Config):
         print(f"JWT token missing: {error}")
         return {'error': 'Authorization token required'}, 401
     
-    # Register blueprints
     from app.routes import api
     app.register_blueprint(api, url_prefix='/api')
     
