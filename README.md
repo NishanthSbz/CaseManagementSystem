@@ -346,10 +346,10 @@ Regular User:
 - Database: MySQL
 - Deployment: Docker
 
-### Deployment Mode
+### Development Mode
 ```bash
 # Start development services
-docker-compose -f docker-compose.dev.yml up -d --build
+docker-compose -f docker-compose.yml up -d --build
 
 # Apply database migrations
 docker-compose exec backend flask db upgrade
@@ -373,6 +373,15 @@ docker-compose exec backend flask db upgrade
    - Backend port (5000): Check for conflicts
    - Database port (3307): Verify availability
 
+
+4. **🛠️ Editor Setup**
+
+This project uses Tailwind CSS. For the best development experience in VS Code, we highly recommend installing the official **[Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)** extension.
+
+This will provide:
+* Intelligent autocompletion
+* Linting for Tailwind classes
+* Syntax highlighting for Tailwind's functions (`@apply`, `@tailwind`, etc.)
 
 
 

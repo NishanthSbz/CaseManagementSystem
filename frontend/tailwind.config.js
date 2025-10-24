@@ -32,6 +32,15 @@ module.exports = {
           900: '#111827',
         }
       },
+      ringColor: {
+        DEFAULT: 'rgb(99 102 241)',
+        primary: {
+          500: '#3b82f6',
+        }
+      },
+      ringOffsetWidth: {
+        DEFAULT: '2px',
+      },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'slide-in': 'slideIn 0.3s ease-out',
@@ -48,5 +57,7 @@ module.exports = {
       }
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/forms'),
+  ],
 }
