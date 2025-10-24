@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  database:
+    image: mysql:8.0
+    container_name: case_management_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: case_management
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - case_management_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: case_management_backend
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_URL=mysql+pymysql://app_user:app_password@database:3306/case_management
+      - SECRET_KEY=your-secret-key-change-in-production
+      - JWT_SECRET_KEY=your-jwt-secret-key-change-in-production
+      - CORS_ORIGINS=http://localhost:5173,http://frontend:5173
+    ports:
+      - "5000:5000"
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - case_management_network
+    volumes:
+      - ./backend:/app
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 10 &&
+        flask db upgrade 2>/dev/null || flask db init && flask db migrate -m 'Initial migration' && flask db upgrade &&
+        flask seed-db &&
+        flask run
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: case_management_frontend
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    ports:
+      - "5173:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - case_management_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5173"]
+      interval: 120s
+      timeout: 10s
+      retries: 2
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  case_management_network:
+    driver: bridge
