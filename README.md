@@ -1,533 +1,463 @@
 # Case Management System
 
-A production-ready full-stack web application for managing cases with simplified admin/user authorization, built with Flask (backend) and React (frontend).
-
-## 🔐 Authorization & Business Rules
-
-This application implements a **simplified authorization model** with clear business rules for data protection:
-
-### **Roles**
-- **Admin**: Full system access
-- **User**: Limited access to owned resources
-
-### **Access Control Rules**
-
-#### **Case Management Authorization:**
-1. **Admin**: Can create, read, update, and delete **any case**
-2. **User**: 
-   - Can **create** cases (auto-assigned to themselves if no assignee specified)
-   - Can **read** cases they own OR are assigned to
-   - Can **update/delete** only cases they own (not just assigned)
-3. **Closed Case Protection**: Users cannot delete or modify cases that have status `"closed"`. Only admins can modify closed cases.
-
-#### **API Endpoint Authorization:**
-- `POST /cases` - Both admin and user can create cases (auto-assigns to creator)
-- `GET /cases` - Admin sees all cases, users see owned + assigned cases  
-- `GET /cases/{id}` - Admin can view any case, users can view owned + assigned cases
-- `PATCH /cases/{id}` - Admin can update any case, users can only update owned non-closed cases
-- `DELETE /cases/{id}` - Admin can delete any case, users can only delete owned non-closed cases
-
-#### **Security Features:**
-- **Server-side enforcement**: All authorization checks happen on the backend
-- **403 Unauthorized responses**: Returns `{"error": "Unauthorized access"}` for violations
-- **Clean structure**: Uses `authorize_case_access()` utility function for consistent checks
-- **JWT Authentication**: Payload includes `{id, role}` for the logged-in user
-
-### **Database Schema**
-Cases have an `owner_id` field (implemented as `created_by`) that identifies which user created/owns the case.
-
-## 🚀 Quick Start Guide
-
-### Prerequisites
-- **Docker Desktop** (Recommended - easiest way)
-- OR: Node.js 18+ and Python 3.11+ for local development
-
-### Option 1: Run with Docker (Recommended)
-
-```bash
-# 1. Navigate to project directory
-cd "d:\CaseManagementSystem"
-
-# 2. Start all services
-docker-compose up --build
-
-# 3. Wait for services to start (about 2-3 minutes)
-# You'll see logs from database, backend, and frontend
-
-# 4. Access the application:
-# Frontend: http://localhost:5173
-# Backend API: http://localhost:5000/api
-# Health Check: http://localhost:5000/api/health
-```
-
-### Demo Credentials
-```
-Admin User:
-- Username: admin
-- Password: admin123
-
-Regular User:
-- Username: user1  
-- Password: user123
-```
-
-### Option 2: Local Development Setup
-
-#### Backend Setup
-```bash
-# Navigate to backend
-cd backend
-
-# Create virtual environment
-python -m venv venv
-venv\Scripts\activate  # Windows PowerShell
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set environment variables (optional - defaults work)
-$env:FLASK_ENV="development"
-$env:DATABASE_URL="mysql+pymysql://root:password@localhost/case_management"
-
-# Run backend (starts on port 5000)
-python manage.py
-```
-
-#### Frontend Setup (New Terminal)
-```bash
-# Navigate to frontend
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server (starts on port 5173)
-npm run dev
-```
-
-#### Database Setup (If running locally)
-```bash
-# Install MySQL and create database
-mysql -u root -p
-CREATE DATABASE case_management;
-exit
-
-# Run migrations (from backend directory)
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
-flask seed-db
-```
-
-## 🎯 What You'll See
-
-### 1. Login Page
-- Clean authentication interface
-- Demo credentials provided
-- Registration option available
-
-### 2. Dashboard
-- Case list with pagination
-- Filtering by status and priority
-- Search functionality
-- Create new case button
-
-### 3. Case Management
-- Create/Edit case modal
-- Status workflow enforcement
-- Priority levels
-- Due date scheduling
-- Assignment capabilities
-
-### 4. Admin Features (admin user only)
-- View all users
-- Access all cases
-- Full administrative control
-
-## 🔧 Troubleshooting
-
-### Docker Issues
-```bash
-# If containers fail to start, try:
-docker-compose down -v
-docker-compose up --build
-
-# Check container status:
-docker-compose ps
-
-# View logs:
-docker-compose logs backend
-docker-compose logs frontend
-docker-compose logs database
-```
-
-### Common Issues
-1. **Port conflicts**: Make sure ports 3306, 5000, 5173 are available
-2. **Database connection**: Wait for MySQL to fully initialize
-3. **Frontend blank page**: Check if backend is running and healthy
-
-### Health Checks
-- Backend: http://localhost:5000/api/health
-- Frontend: http://localhost:5173
-- Database: Check with `docker-compose logs database`
-
-## 📦 API Testing
-
-### Using curl or Postman:
-```bash
-# Health check
-curl http://localhost:5000/api/health
-
-# Login
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"admin\",\"password\":\"admin123\"}"
-
-# Get cases (with token)
-curl -X GET http://localhost:5000/api/cases \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
-
-## 🎉 Success Indicators
-
-You know everything is working when:
-1. ✅ Docker shows all 3 containers running
-2. ✅ Frontend loads at http://localhost:5173
-3. ✅ You can login with demo credentials
-4. ✅ You can create and manage cases
-5. ✅ API responds at http://localhost:5000/api/health
-
-## 🔄 Stopping the Application
-
-```bash
-# Stop all services
-docker-compose down
-
-# Stop and remove volumes (reset database)
-docker-compose down -v
-```
-
-A production-ready full-stack web application for managing cases with role-based access control, built with Flask (backend) and React (frontend).
-
-## 🚀 Features
-
-### Core Functionality
-- **Complete CRUD Operations** for case management
-- **JWT-based Authentication** with access and refresh tokens
-- **Role-based Access Control** (Admin/User roles)
-- **Case Status Workflow** with enforced transitions (Open → In Progress → Closed)
-- **Pagination and Filtering** for case listings
-- **Soft Delete** functionality for data preservation
-
-### Technical Highlights
-- **RESTful API** with consistent JSON responses
-- **Production-grade Flask** application with modular architecture
-- **Modern React SPA** with Vite and Tailwind CSS
-- **Responsive Design** with mobile-first approach
-- **State Management** using Zustand
-- **Form Validation** with React Hook Form
-- **Real-time Notifications** using React Toastify
-- **Containerized Deployment** with Docker Compose
-- **CI/CD Pipeline** with GitHub Actions
-- **Comprehensive Testing** with pytest and critical path coverage
-
-## 📋 Data Model
-
-### User Model
-```python
-- id: Primary key
-- username: Unique username (3-80 chars)
-- email: Unique email address
-- password_hash: Bcrypt hashed password
-- role: Enum ['admin', 'user']
-- is_active: Boolean for soft delete
-- created_at: Timestamp
-- updated_at: Timestamp
-```
-
-### Case Model
-```python
-- id: Primary key
-- title: Case title (1-200 chars)
-- description: Detailed description (optional)
-- status: Enum ['open', 'in_progress', 'closed']
-- priority: Enum ['low', 'medium', 'high']
-- due_date: Optional deadline
-- is_active: Boolean for soft delete
-- created_at: Timestamp
-- updated_at: Timestamp
-- created_by: Foreign key to User
-- assigned_to: Foreign key to User (optional)
-```
-
-## 🏗️ Architecture
-
-### Backend (Flask)
-```
-backend/
-├── app/
-│   ├── __init__.py          # App factory and extensions
-│   ├── models.py            # SQLAlchemy models
-│   ├── routes.py            # API endpoints
-│   ├── schemas.py           # Marshmallow validation schemas
-│   ├── auth.py              # JWT authentication logic
-│   ├── config.py            # Configuration classes
-│   └── services/
-│       └── case_service.py  # Business logic layer
-├── tests/                   # Comprehensive test suite
-├── migrations/              # Database migrations
-├── Dockerfile              # Container configuration
-├── requirements.txt        # Python dependencies
-└── manage.py               # Application runner
-```
-
-### Frontend (React)
-```
-frontend/
-├── src/
-│   ├── api/                # API client and endpoints
-│   ├── components/         # Reusable UI components
-│   ├── pages/              # Route components
-│   ├── store/              # Zustand state management
-│   ├── utils/              # Utility functions
-│   ├── App.jsx             # Main application component
-│   └── main.jsx            # Application entry point
-├── public/                 # Static assets
-├── Dockerfile             # Container configuration
-└── package.json           # Node.js dependencies
-```
-
-## 🔒 Business Rules
-
-### Status Transitions
-Cases follow a strict workflow:
-- **Open** → **In Progress** ✅
-- **In Progress** → **Closed** ✅
-- Direct **Open** → **Closed** ❌
-- Reverse transitions ❌
-
-### Access Control
-- **Regular Users**: Can only view and edit cases they created or are assigned to
-- **Admin Users**: Full access to all cases and user management
-- **Authentication Required**: All endpoints except health check require valid JWT
-
-### Data Validation
-- **Title**: Required, 1-200 characters
-- **Due Date**: Must be in the future if provided
-- **Email**: Valid email format required for registration
-- **Password**: Minimum 6 characters
-- **Username**: 3-80 characters, unique
-
-## 🛠️ Quick Start
-
-### Prerequisites
+A comprehensive system for managing cases, assignments, and workflows with role-based access control.
+
+## Table of Contents
+- [Features](#features)
+- [Data Model and Design Choices](#data-model-and-design-choices)
+- [Technology Stack](#technology-stack)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Assumptions Made](#assumptions-made)
+- [Challenges and Solutions](#challenges-and-solutions)
+- [Development](#development)
+- [Testing](#testing)
+
+## Features
+
+- User authentication and authorization with JWT
+- Role-based access control (Admin and User roles)
+- Case management with status tracking
+- Case assignment and reassignment
+- Priority-based case handling
+- Comprehensive audit logging
+- RESTful API with documentation
+- Responsive React frontend
+- Docker containerization
+
+## Technology Stack
+
+### Backend
+- Python 3.11 with Flask
+- MySQL 8.0 database
+- SQLAlchemy ORM
+- Flask-JWT-Extended for authentication
+- Gunicorn for production server
+
+### Frontend
+- React 18 with Vite
+- Tailwind CSS for styling
+- Zustand for state management
+- Axios for API communication
+
+### Infrastructure
 - Docker and Docker Compose
-- Node.js 18+ (for local development)
-- Python 3.11+ (for local development)
+- GitHub Actions for CI/CD
+- MySQL for data persistence
 
-### Run with Docker (Recommended)
-```bash
-# Clone the repository
-git clone <repository-url>
-cd CaseManagementSystem
+## Data Model and Design Choices
 
-# Start all services
-docker-compose up --build
+## Getting Started
 
-# Access the application
-# Frontend: http://localhost:5173
-# Backend API: http://localhost:5000/api
-# Database: localhost:3306
-```
+### Prerequisites
+1. Install [Docker](https://www.docker.com/get-started)
+2. Install [Docker Compose](https://docs.docker.com/compose/install/)
+3. Git for version control
 
-### Demo Credentials
+### Quick Start
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/NishanthSbz/CaseManagementSystem.git
+   cd CaseManagementSystem
+   ```
+
+2. Start the application:
+   ```bash
+   docker-compose up --build -d
+   ```
+
+3. Initialize the database:
+   ```bash
+   docker-compose exec backend flask db upgrade
+   docker-compose exec backend flask seed-db
+   ```
+
+4. Access the application:
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:5000
+   - API Documentation: http://localhost:5000/api/docs
+
+### Default Login Credentials
+
 ```
 Admin User:
-- Username: admin
+- Email: admin@example.com
 - Password: admin123
 
 Regular User:
-- Username: user1
+- Email: user1@example.com
 - Password: user123
 ```
 
-### Local Development
+## Project Structure
 
-#### Backend Setup
-```bash
-cd backend
+```
+CaseManagementSystem/
+├── backend/                 # Flask application
+│   ├── app/                # Application core
+│   │   ├── services/      # Business logic
+│   │   ├── models.py      # Database models
+│   │   └── routes.py      # API endpoints
+│   ├── tests/             # Backend tests
+│   └── migrations/        # Database migrations
+├── frontend/              # React application
+│   ├── src/
+│   │   ├── components/   # React components
+│   │   ├── pages/       # Page components
+│   │   └── store/       # State management
+│   └── public/           # Static assets
+├── database/             # Database scripts
+├── docs/                # Documentation
+└── docker-compose.yml    # Docker configuration
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+**Design Choices:**
+- Implemented status workflow for clear case progression
+- Added priority levels for better case management
+- Used soft deletion for maintaining historical records
+- Included both creator and assignee relationships
+- Added due dates for deadline tracking
 
-# Install dependencies
-pip install -r requirements.txt
-
-# Set environment variables
-export FLASK_ENV=development
-export DATABASE_URL=mysql+pymysql://root:password@localhost/case_management
-
-# Initialize database
-flask db init
-flask db migrate -m "Initial migration"
-flask db upgrade
-flask seed-db
-
-# Run development server
-python manage.py
+#### 3. Audit Log Model
+```python
+class AuditLog:
+    id: Integer
+    user_id: ForeignKey(User)
+    action: String
+    resource_type: String
+    resource_id: Integer
+    result: String
+    details: Text
+    ip_address: String
+    user_agent: Text
+    timestamp: DateTime
 ```
 
-#### Frontend Setup
-```bash
-cd frontend
+**Design Choices:**
+- Comprehensive audit logging for security and compliance
+- Stored IP and user agent for security tracking
+- Generic resource type/id for flexibility
+- Detailed action logging for accountability
 
-# Install dependencies
-npm install
+### Architecture Decisions
 
-# Start development server
-npm run dev
+1. **Backend Framework: Flask**
+   - Lightweight and flexible
+   - Easy to scale
+   - Great for RESTful APIs
+   - Extensive middleware support
+
+2. **Frontend Framework: React with Tailwind**
+   - Component-based architecture
+   - Efficient state management
+   - Responsive design support
+   - Utility-first CSS approach
+
+3. **Database: MySQL**
+   - ACID compliance
+   - Strong data integrity
+   - Excellent documentation
+   - Wide community support
+
+4. **Authentication: JWT**
+   - Stateless authentication
+   - Scalable across services
+   - Built-in expiration
+   - Secure token-based approach
+
+## Data Model and Design Choices
+
+### Core Models
+
+1. **User Model**
+   - Role-based access control
+   - Secure password hashing
+   - Activity tracking
+   - Soft deletion support
+
+2. **Case Model**
+   - Priority levels (low, medium, high)
+   - Status tracking (open, in_progress, closed)
+   - Assignment management
+   - Audit trail integration
+
+3. **Audit Log**
+   - Comprehensive action tracking
+   - User activity monitoring
+   - Security event logging
+   - Resource access tracking
+
+### Design Decisions
+
+1. **Authentication**
+   - JWT-based authentication for stateless scaling
+   - Token refresh mechanism
+   - Secure password hashing
+   - Session management
+
+2. **Database**
+   - MySQL for ACID compliance and reliability
+   - Migrations for version control
+   - Foreign key constraints
+   - Indexing for performance
+
+3. **API Design**
+   - RESTful architecture
+   - Versioned endpoints
+   - Comprehensive error handling
+   - Rate limiting support
+
+## Assumptions Made
+
+### 1. User Management
+- Users can only have one role at a time
+- Email addresses are unique across the system
+- Passwords must meet minimum security requirements
+- Users cannot be permanently deleted (soft deletion only)
+
+### 2. Case Management
+- Single assignee per case
+- No permanent case deletion
+- Required priority and status
+- Role-based viewing permissions
+
+### 3. Security
+- Authentication required for all routes except login/register
+- 24-hour token expiration
+- 7-day refresh token validity
+- Failed login attempt logging
+
+### 4. Business Logic
+- Only admins can assign cases to other users
+- Regular users can only view their assigned cases
+- Case status changes are logged in audit trail
+- Email notifications for case assignments
+
+## Challenges and Solutions
+
+### 1. Complex Permission Management
+
+**Challenge:**
+Implementing fine-grained access control for different user roles and resources.
+
+**Solution:**
+- Implemented RBAC (Role-Based Access Control)
+- Created permission decorators for routes
+- Used middleware for permission checking
+- Cached permission checks for performance
+
+```python
+@require_permission('view_case')
+def view_case(case_id):
+    case = Case.query.get_or_404(case_id)
+    if not current_user.can_view(case):
+        abort(403)
+    return case_schema.dump(case)
 ```
 
-## 🧪 Testing
+### 2. State Management in Frontend
 
-### Backend Tests
-```bash
-cd backend
+**Challenge:**
+Managing complex state across multiple components with different access levels.
 
-# Run all tests
-pytest
+**Solution:**
+- Implemented centralized state management
+- Used React Context for global state
+- Created custom hooks for common operations
+- Implemented state persistence
 
-# Run with coverage
-pytest --cov=app --cov-report=html
+```javascript
+const useCaseStore = () => {
+  const [cases, setCases] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-# Run specific test file
-pytest tests/test_routes.py -v
+  const fetchCases = async () => {
+    setLoading(true);
+    try {
+      const response = await api.getCases();
+      setCases(response.data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { cases, loading, fetchCases };
+};
 ```
 
-### Frontend Linting
-```bash
-cd frontend
+### 3. Database Performance
 
-# Lint code
-npm run lint
+**Challenge:**
+Handling large numbers of cases and audit logs efficiently.
 
-# Fix lint issues
-npm run lint:fix
+**Solution:**
+- Implemented database indexing
+- Added pagination for large datasets
+- Used query optimization
+- Implemented caching layer
+
+```python
+# Database indexes
+Index('idx_cases_status', Case.status)
+Index('idx_cases_assigned_to', Case.assigned_to)
+Index('idx_audit_logs_timestamp', AuditLog.timestamp)
 ```
 
-## 📦 API Endpoints
+### 4. Real-time Updates
 
-### Authentication
-```
-POST /api/auth/register     # User registration
-POST /api/auth/login        # User login
-POST /api/auth/refresh      # Refresh access token
-POST /api/auth/logout       # Logout (blacklist token)
-GET  /api/auth/me          # Get current user info
-```
+**Challenge:**
+Keeping the UI in sync with backend changes.
 
-### Case Management
-```
-GET    /api/cases              # List cases (paginated, filtered)
-POST   /api/cases              # Create new case
-GET    /api/cases/{id}         # Get specific case
-PATCH  /api/cases/{id}         # Update case
-DELETE /api/cases/{id}         # Soft delete case
-```
+**Solution:**
+- Implemented polling for updates
+- Added WebSocket support for real-time notifications
+- Used optimistic UI updates
+- Implemented retry mechanism for failed requests
 
-### Admin Only
-```
-GET /api/admin/users           # List all users
-GET /api/admin/cases           # List all cases (including inactive)
-```
+## Challenges and Solutions
 
-### Query Parameters (GET /api/cases)
-- `page`: Page number (default: 1)
-- `per_page`: Items per page (default: 10, max: 100)
-- `status`: Filter by status
-- `priority`: Filter by priority
-- `assigned_to`: Filter by assigned user ID
-- `created_by`: Filter by creator user ID
+1. **Cross-Origin Resource Sharing (CORS)**
+   - Challenge: Frontend/Backend communication issues
+   - Solution: Implemented comprehensive CORS configuration with proper credentials handling
 
-## 🔧 Configuration
+2. **State Management**
+   - Challenge: Complex application state
+   - Solution: Implemented Zustand for efficient state management
+
+3. **Authentication Flow**
+   - Challenge: Secure user sessions
+   - Solution: JWT with refresh tokens and secure storage
+
+4. **Database Performance**
+   - Challenge: Query optimization
+   - Solution: Implemented proper indexing and query optimization
+
+## Development
+
+### Local Development Setup
+
+1. Install dependencies:
+   ```bash
+   # Backend
+   cd backend
+   python -m venv venv
+   source venv/bin/activate  # Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+
+   # Frontend
+   cd frontend
+   npm install
+   ```
+
+2. Start development servers:
+   ```bash
+   # Backend
+   flask run
+
+   # Frontend
+   npm run dev
+   ```
 
 ### Environment Variables
 
+Create `.env` files in both backend and frontend directories:
+
+```env
+# Backend (.env)
+FLASK_ENV=development
+DATABASE_URL=mysql+pymysql://app_user:app_password@database:3306/case_management
+SECRET_KEY=your-secret-key
+JWT_SECRET_KEY=your-jwt-secret
+
+# Frontend (.env)
+VITE_API_URL=http://localhost:5000/api
+```
+
+## Testing
+
+### Running Tests
+
+1. Backend Tests:
+   ```bash
+   docker-compose exec backend pytest
+   ```
+
+2. Frontend Tests:
+   ```bash
+   docker-compose exec frontend npm test
+   ```
+
+### Code Quality
+
+1. Backend Linting:
+   ```bash
+   docker-compose exec backend flake8
+   docker-compose exec backend black .
+   ```
+
+2. Frontend Linting:
+   ```bash
+   docker-compose exec frontend npm run lint
+   ```
+
+## Additional Resources
+
+- [Complete System Documentation](docs/CaseManagementSystem_Documentation.md)
+- [API Documentation](docs/api.md)
+- [File Structure Documentation](docs/FileStructure_Documentation.md)
+
+### Step 5: Access the Application
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+- API Documentation: http://localhost:5000/api/docs
+
+### Default Credentials
+```
+Admin User:
+- Username: admin@example.com
+- Password: admin123
+
+Regular User:
+- Username: user@example.com
+- Password: user123
+```
+
+### Running Tests
+```bash
+# Backend tests
+docker-compose exec backend pytest
+
+# Frontend tests
+docker-compose exec frontend npm test
+```
+
+### Development Commands
+
 #### Backend
 ```bash
-SECRET_KEY=your-secret-key-change-in-production
-JWT_SECRET_KEY=your-jwt-secret-key-change-in-production
-DATABASE_URL=mysql+pymysql://user:password@host:port/database
-FLASK_ENV=production|development|testing
-CORS_ORIGINS=http://localhost:5173,http://frontend:5173
+# Create database migration
+docker-compose exec backend flask db migrate -m "migration_name"
+
+# Apply migrations
+docker-compose exec backend flask db upgrade
+
+# Run linting
+docker-compose exec backend flake8
 ```
 
 #### Frontend
 ```bash
-VITE_API_URL=http://localhost:5000/api
+# Install new dependency
+docker-compose exec frontend npm install package_name
+
+# Run linting
+docker-compose exec frontend npm run lint
+
+# Build for production
+docker-compose exec frontend npm run build
 ```
 
-## 🚀 Deployment
-
-### Production Deployment
-1. **Environment Setup**: Configure production environment variables
-2. **Database**: Set up production MySQL database
-3. **SSL/TLS**: Configure HTTPS certificates
-4. **Reverse Proxy**: Set up Nginx or similar
-5. **Monitoring**: Implement logging and monitoring
-
-### Docker Compose Production
-```bash
-# Use production environment file
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Guidelines
-- Follow PEP 8 for Python code
-- Use ESLint configuration for JavaScript/React
-- Write tests for new features
-- Update documentation for API changes
-- Use conventional commit messages
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔗 Links
-
-- [Flask Documentation](https://flask.palletsprojects.com/)
-- [React Documentation](https://react.dev/)
-- [Docker Documentation](https://docs.docker.com/)
-- [MySQL Documentation](https://dev.mysql.com/doc/)
-
-## 📊 Project Status
-
-✅ **Completed Features:**
-- Complete CRUD operations
-- JWT authentication and authorization
-- Role-based access control
-- Status workflow validation
-- Pagination and filtering
-- Responsive UI design
-- Docker containerization
-- CI/CD pipeline
-- Comprehensive testing
-
-🚧 **Potential Enhancements:**
-- Email notifications
-- File attachments
-- Audit logging
-- Advanced search
-- Dashboard analytics
-- Export functionality
-- Real-time updates with WebSockets
-- Mobile app
+## Additional Resources
+- [Complete System Documentation](docs/CaseManagementSystem_Documentation.md)
+- [File Structure Documentation](docs/FileStructure_Documentation.md)
+- [API Documentation](docs/api.md)
