@@ -1,98 +1,15 @@
 # Case Management System
 
-A comprehensive system for managing cases, assignments, and workflows with role-based access control.
+A full-stack web application for managing cases and assignments with role-based access control.
 
-## Table of Contents
-- [Features](#features)
-- [Data Model and Design Choices](#data-model-and-design-choices)
-- [Technology Stack](#technology-stack)
-- [Getting Started](#getting-started)
-- [Project Structure](#project-structure)
-- [Assumptions Made](#assumptions-made)
-- [Challenges and Solutions](#challenges-and-solutions)
-- [Development](#development)
-- [Testing](#testing)
-
-## Features
-
-- User authentication and authorization with JWT
-- Role-based access control (Admin and User roles)
-- Case management with status tracking
-- Case assignment and reassignment
-- Priority-based case handling
-- Comprehensive audit logging
-- RESTful API with documentation
-- Responsive React frontend
-- Docker containerization
-
-## Technology Stack
-
-### Backend
-- Python 3.11 with Flask
-- MySQL 8.0 database
-- SQLAlchemy ORM
-- Flask-JWT-Extended for authentication
-- Gunicorn for production server
-
-### Frontend
-- React 18 with Vite
-- Tailwind CSS for styling
-- Zustand for state management
-- Axios for API communication
-
-### Infrastructure
-- Docker and Docker Compose
-- GitHub Actions for CI/CD
-- MySQL for data persistence
-
-## Data Model and Design Choices
-
-## Getting Started
-
-### Prerequisites
-1. Install [Docker](https://www.docker.com/get-started)
-2. Install [Docker Compose](https://docs.docker.com/compose/install/)
-3. Git for version control
-
-### Quick Start
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/NishanthSbz/CaseManagementSystem.git
-   cd CaseManagementSystem
-   ```
-
-2. Start the application:
-   ```bash
-   docker-compose up --build -d
-   ```
-
-3. Initialize the database:
-   ```bash
-   docker-compose exec backend flask db upgrade
-   docker-compose exec backend flask seed-db
-   ```
-
-4. Access the application:
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:5000
-   - API Documentation: http://localhost:5000/api/docs
-
-### Default Login Credentials
-
-```
-Admin User:
-- Email: admin@example.com
-- Password: admin123
-
-Regular User:
-- Email: user1@example.com
-- Password: user123
-```
+## Documentation
+- [Complete System Documentation](docs/CaseManagementSystem_Documentation.md)
+- [API Documentation](docs/api.md)
+- [File Structure Documentation](docs/FileStructure_Documentation.md)
 
 ## Project Structure
 
-```
+
 CaseManagementSystem/
 ├── backend/                 # Flask application
 │   ├── app/                # Application core
@@ -109,31 +26,7 @@ CaseManagementSystem/
 │   └── public/           # Static assets
 ├── database/             # Database scripts
 ├── docs/                # Documentation
-└── docker-compose.yml    # Docker configuration
-
-**Design Choices:**
-- Implemented status workflow for clear case progression
-- Added priority levels for better case management
-- Used soft deletion for maintaining historical records
-- Included both creator and assignee relationships
-- Added due dates for deadline tracking
-
-#### 3. Audit Log Model
-```python
-class AuditLog:
-    id: Integer
-    user_id: ForeignKey(User)
-    action: String
-    resource_type: String
-    resource_id: Integer
-    result: String
-    details: Text
-    ip_address: String
-    user_agent: Text
-    timestamp: DateTime
-```
-
-**Design Choices:**
+└── docker-compose.yml    # Docker configuration**Design Choices:**
 - Comprehensive audit logging for security and compliance
 - Stored IP and user agent for security tracking
 - Generic resource type/id for flexibility
@@ -167,45 +60,60 @@ class AuditLog:
 
 ## Data Model and Design Choices
 
-### Core Models
+### Core Data Models
 
-1. **User Model**
-   - Role-based access control
-   - Secure password hashing
-   - Activity tracking
-   - Soft deletion support
+```python
+class User:
+    id: Integer
+    username: String
+    email: String
+    password_hash: String
+    role: Enum['admin', 'user']
+    is_active: Boolean
+    created_at: DateTime
+    updated_at: DateTime
 
-2. **Case Model**
-   - Priority levels (low, medium, high)
-   - Status tracking (open, in_progress, closed)
-   - Assignment management
-   - Audit trail integration
+class Case:
+    id: Integer
+    title: String
+    description: Text
+    status: Enum['open', 'in_progress', 'closed']
+    priority: Enum['low', 'medium', 'high']
+    due_date: DateTime
+    created_by: ForeignKey(User)
+    assigned_to: ForeignKey(User)
+    created_at: DateTime
+    updated_at: DateTime
 
-3. **Audit Log**
-   - Comprehensive action tracking
-   - User activity monitoring
-   - Security event logging
-   - Resource access tracking
+class AuditLog:
+    id: Integer
+    user_id: ForeignKey(User)
+    action: String
+    resource_type: String
+    resource_id: Integer
+    details: Text
+    timestamp: DateTime
+```
 
 ### Design Decisions
 
-1. **Authentication**
-   - JWT-based authentication for stateless scaling
-   - Token refresh mechanism
-   - Secure password hashing
-   - Session management
+1. **Database Design**
+   - Used MySQL for ACID compliance and reliability
+   - Implemented soft deletion for data integrity
+   - Added timestamps for audit trails
+   - Used foreign keys for referential integrity
 
-2. **Database**
-   - MySQL for ACID compliance and reliability
-   - Migrations for version control
-   - Foreign key constraints
-   - Indexing for performance
+2. **Authentication System**
+   - JWT-based authentication for scalability
+   - Refresh token mechanism for better security
+   - Role-based access control
+   - Password hashing with modern algorithms
 
-3. **API Design**
-   - RESTful architecture
-   - Versioned endpoints
+3. **API Architecture**
+   - RESTful design for consistency
    - Comprehensive error handling
-   - Rate limiting support
+   - Input validation at all endpoints
+   - Rate limiting for security
 
 ## Assumptions Made
 
@@ -246,14 +154,14 @@ Implementing fine-grained access control for different user roles and resources.
 - Used middleware for permission checking
 - Cached permission checks for performance
 
-```python
+python
 @require_permission('view_case')
 def view_case(case_id):
     case = Case.query.get_or_404(case_id)
     if not current_user.can_view(case):
         abort(403)
     return case_schema.dump(case)
-```
+
 
 ### 2. State Management in Frontend
 
@@ -266,7 +174,7 @@ Managing complex state across multiple components with different access levels.
 - Created custom hooks for common operations
 - Implemented state persistence
 
-```javascript
+javascript
 const useCaseStore = () => {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -283,7 +191,7 @@ const useCaseStore = () => {
 
   return { cases, loading, fetchCases };
 };
-```
+
 
 ### 3. Database Performance
 
@@ -296,12 +204,12 @@ Handling large numbers of cases and audit logs efficiently.
 - Used query optimization
 - Implemented caching layer
 
-```python
+python
 # Database indexes
 Index('idx_cases_status', Case.status)
 Index('idx_cases_assigned_to', Case.assigned_to)
 Index('idx_audit_logs_timestamp', AuditLog.timestamp)
-```
+
 
 ### 4. Real-time Updates
 
@@ -332,132 +240,139 @@ Keeping the UI in sync with backend changes.
    - Challenge: Query optimization
    - Solution: Implemented proper indexing and query optimization
 
-## Development
+## Quick Start
 
-### Local Development Setup
+### Prerequisites
+1. **Docker Desktop** - [Download](https://www.docker.com/products/docker-desktop/)
+2. **Git** - [Download](https://git-scm.com/downloads)
 
-1. Install dependencies:
-   ```bash
-   # Backend
+### Running Locally (step by step implementation with Docker)
+
+1. *Clone and Setup Environment*
+   bash
+   # Clone repository
+   git clone https://github.com/NishanthSbz/CaseManagementSystem.git
+   cd CaseManagementSystem
+   
+
+2. *Backend Setup*
+   bash
+   # Navigate to backend directory
    cd backend
+
+   # Create virtual environment
    python -m venv venv
-   source venv/bin/activate  # Windows: venv\Scripts\activate
+
+   # Activate virtual environment
+   # On Windows:
+   .\venv\Scripts\activate
+   # On Unix/MacOS:
+   source venv/bin/activate
+
+   # Install dependencies
    pip install -r requirements.txt
 
-   # Frontend
-   cd frontend
+ 3. *Environment Setup*
+   bash
+   # Copy environment files
+   cp backend/.env.example backend/.env
+   cp frontend/.env.example frontend/.env
+   # Setup environment variables 
+   cp .env.example .env 
+   
+
+4. *Frontend Setup*
+   bash
+   # Navigate to frontend directory
+   cd ../frontend
+
+   # Install dependencies
    npm install
-   ```
 
-2. Start development servers:
-   ```bash
-   # Backend
+   # Setup environment variables
+   cp .env.example .env
+   
+
+5. *Database Setup with Docker*
+   bash
+   # Start only the database service
+   docker-compose up -d database
+
+   # Wait for database to be ready
+   docker-compose logs -f database
+   
+
+6. *Start Development Servers*
+
+   In one terminal (backend):
+   bash
+   cd backend
+   # Activate virtual environment if not activated
    flask run
-
-   # Frontend
+   
+   In another terminal (frontend):
+   bash
+   cd frontend
    npm run dev
-   ```
 
-### Environment Variables
+   *or*
 
-Create `.env` files in both backend and frontend directories:
+   simply, open the running port(5173) of the frontend image inside the Docker Container.
+   
 
-```env
-# Backend (.env)
-FLASK_ENV=development
-DATABASE_URL=mysql+pymysql://app_user:app_password@database:3306/case_management
-SECRET_KEY=your-secret-key
-JWT_SECRET_KEY=your-jwt-secret
-
-# Frontend (.env)
-VITE_API_URL=http://localhost:5000/api
-```
-
-## Testing
-
-### Running Tests
-
-1. Backend Tests:
-   ```bash
-   docker-compose exec backend pytest
-   ```
-
-2. Frontend Tests:
-   ```bash
-   docker-compose exec frontend npm test
-   ```
-
-### Code Quality
-
-1. Backend Linting:
-   ```bash
-   docker-compose exec backend flake8
-   docker-compose exec backend black .
-   ```
-
-2. Frontend Linting:
-   ```bash
-   docker-compose exec frontend npm run lint
-   ```
-
-## Additional Resources
-
-- [Complete System Documentation](docs/CaseManagementSystem_Documentation.md)
-- [API Documentation](docs/api.md)
-- [File Structure Documentation](docs/FileStructure_Documentation.md)
-
-### Step 5: Access the Application
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000
-- API Documentation: http://localhost:5000/api/docs
-
-### Default Credentials
+### Default Login Credentials
 ```
 Admin User:
-- Username: admin@example.com
+- Email: admin
 - Password: admin123
 
 Regular User:
-- Username: user@example.com
+- Email: user1
 - Password: user123
 ```
 
-### Running Tests
+## Project Overview
+
+### Features
+- Role-based user management (Admin/Regular users)
+- Case creation and assignment
+- Priority-based case handling
+- Complete audit logging
+- JWT-based authentication
+
+### Technical Stack - Summary
+- Backend: Flask (Python)
+- Frontend: React with Vite
+- Database: MySQL
+- Deployment: Docker
+
+### Deployment Mode
 ```bash
-# Backend tests
-docker-compose exec backend pytest
+# Start development services
+docker-compose -f docker-compose.dev.yml up -d --build
 
-# Frontend tests
-docker-compose exec frontend npm test
-```
-
-### Development Commands
-
-#### Backend
-```bash
-# Create database migration
-docker-compose exec backend flask db migrate -m "migration_name"
-
-# Apply migrations
+# Apply database migrations
 docker-compose exec backend flask db upgrade
-
-# Run linting
-docker-compose exec backend flake8
 ```
 
-#### Frontend
-```bash
-# Install new dependency
-docker-compose exec frontend npm install package_name
+### Troubleshooting
 
-# Run linting
-docker-compose exec frontend npm run lint
+1. **Reset Environment**
+   ```bash
+   docker-compose down -v
+   docker-compose up -d --build
+   ```
 
-# Build for production
-docker-compose exec frontend npm run build
-```
+2. **View Logs**
+   ```bash
+   docker-compose logs -f
+   ```
 
-## Additional Resources
-- [Complete System Documentation](docs/CaseManagementSystem_Documentation.md)
-- [File Structure Documentation](docs/FileStructure_Documentation.md)
-- [API Documentation](docs/api.md)
+3. **Common Issues**
+   - Frontend port (5173): Ensure port is available
+   - Backend port (5000): Check for conflicts
+   - Database port (3307): Verify availability
+
+
+
+
